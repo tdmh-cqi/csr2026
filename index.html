@@ -131,13 +131,19 @@
             font-size: 14px;
         }
 
-        input[type="text"], input[type="email"], input[type="date"], input[type="time"], input[type="number"] {
+        input[type="text"], input[type="email"], input[type="date"], input[type="time"], input[type="number"], textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ccc;
             border-radius: 8px;
             font-size: 14px;
             box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
         }
 
         .table-responsive {
@@ -277,6 +283,11 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+
+                <div class="form-group">
+                    <label for="additionalNotes">ADDITIONAL NOTES / REMARKS</label>
+                    <textarea id="additionalNotes" name="additionalNotes" placeholder="Enter any special instructions or additional details here..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -502,7 +513,7 @@
                     date: formData.get('date'),
                     time: formData.get('time'),
                     reqBy: formData.get('requestedBy'),
-                    recBy: "", // Explicitly set to empty string for the UNUSED column H
+                    recBy: formData.get('additionalNotes'), // We map additional notes here as a note for the recipient/CSR
                     itemDescs: itemDescs.join(" | "), 
                     itemQtys: itemQtys.join(" | "),
                     sigHod: signaturePadHod.isEmpty() ? "" : signaturePadHod.toDataURL(),
