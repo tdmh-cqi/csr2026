@@ -132,6 +132,18 @@
             .tabs, .btn-group, .btn-clear { display: none !important; }
             .container { box-shadow: none; border: none; }
         }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-online { background: #e6fffa; color: #38b2ac; border: 1px solid #38b2ac; }
+        .status-offline { background: #fff5f5; color: #e53e3e; border: 1px solid #e53e3e; }
     </style>
 </head>
 <body>
@@ -140,6 +152,9 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('new')">New Request</button>
         <button class="tab-btn" onclick="switchTab('track')">Track Requests</button>
+        <div id="connectionStatus" style="margin-left: auto; align-self: center;">
+            <span class="status-badge status-offline">Checking Link...</span>
+        </div>
     </div>
 
     <!-- REQUISITION FORM -->
@@ -161,7 +176,7 @@
                 </div>
                 <div class="form-group" style="text-align: right;">
                     <label>REQUEST NO.</label>
-                    <div id="reqNoDisplay" style="font-weight: bold; color: var(--urgent-red); font-size: 18px;">Loading...</div>
+                    <div id="reqNoDisplay" style="font-weight: bold; color: var(--urgent-red); font-size: 18px;">Connecting...</div>
                 </div>
             </div>
 
@@ -264,6 +279,7 @@
 </div>
 
 <script>
+    // Ensure this URL is the "Current" Web App URL from Google Apps Script (ends in /exec)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhQwVJTvLo_W4IcxPTdcCDojC92XjS4Y5wb1r_ldwO1jXu7LJ99QBMJ_Ncl4FBek239Q/exec";
     let sigPads = { hod: null, admin: null };
 
@@ -274,6 +290,17 @@
         setDefaults();
         fetchReqNumber();
     };
+
+    function updateStatus(isOnline) {
+        const badge = document.querySelector('#connectionStatus span');
+        if (isOnline) {
+            badge.innerText = "Link Active";
+            badge.className = "status-badge status-online";
+        } else {
+            badge.innerText = "Connection Failed";
+            badge.className = "status-badge status-offline";
+        }
+    }
 
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -296,7 +323,7 @@
             tr.innerHTML = `
                 <td>${i}</td>
                 <td><input type="text" class="item-name" placeholder="Item details..."></td>
-                <td><input type="number" class="item-qty" value="1"></td>
+                <td><input type="number" class="item-qty" placeholder="0" min="0"></td>
                 <td><input type="file" class="item-img" accept="image/*"></td>
             `;
             tbody.appendChild(tr);
@@ -327,11 +354,28 @@
 
     async function fetchReqNumber() {
         try {
-            const res = await fetch(`${SCRIPT_URL}?action=getFormNumber`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+            const res = await fetch(`${SCRIPT_URL}?action=getFormNumber`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) throw new Error('Network response not ok');
+            
             const num = await res.text();
             document.getElementById('reqNoDisplay').innerText = num;
+            updateStatus(true);
         } catch (e) {
-            document.getElementById('reqNoDisplay').innerText = "ERR-001";
+            console.error("Connection Error:", e);
+            document.getElementById('reqNoDisplay').innerText = "OFFLINE";
+            updateStatus(false);
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Connection Failed',
+                text: 'Could not reach the database. Please check if the Google Script is deployed as a Web App with "Anyone" access.',
+                footer: '<a href="#">Help with Deployment?</a>'
+            });
         }
     }
 
@@ -350,7 +394,12 @@
     }
 
     async function processSubmission(isPrint) {
-        Swal.fire({ title: 'Submitting...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ 
+            title: 'Submitting...', 
+            text: 'Uploading data to Google Sheets',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading() 
+        });
 
         const items = [];
         const qtys = [];
@@ -358,11 +407,17 @@
         
         rows.forEach(row => {
             const name = row.querySelector('.item-name').value;
+            const qty = row.querySelector('.item-qty').value;
             if(name) {
                 items.push(name);
-                qtys.push(row.querySelector('.item-qty').value);
+                qtys.push(qty || "0");
             }
         });
+
+        if (items.length === 0) {
+            Swal.fire('Empty Request', 'Please add at least one item.', 'warning');
+            return;
+        }
 
         const payload = {
             formNum: document.getElementById('reqNoDisplay').innerText,
@@ -380,12 +435,18 @@
         };
 
         try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-            Swal.fire('Success', 'Request saved to database.', 'success');
+            const response = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', // Standard for cross-origin Apps Script posts
+                body: JSON.stringify(payload) 
+            });
+            
+            Swal.fire('Success', 'Request sent to CSR successfully!', 'success');
             if(isPrint) window.print();
-            setTimeout(() => location.reload(), 2000);
+            setTimeout(() => location.reload(), 2500);
         } catch (e) {
-            Swal.fire('Error', 'Could not connect to server.', 'error');
+            console.error("Submission Error:", e);
+            Swal.fire('Submission Error', 'Could not save data. Check your internet connection.', 'error');
         }
     }
 
@@ -403,11 +464,11 @@
                     <td>${row.dept}</td>
                     <td style="font-size:11px">${row.items}</td>
                     <td>${row.priority}</td>
-                    <td><span style="color:green">● Received</span></td>
+                    <td><span style="color:green">● Sent</span></td>
                 </tr>
             `).join('') || '<tr><td colspan="6">No recent requests.</td></tr>';
         } catch (e) {
-            container.innerHTML = '<tr><td colspan="6" style="color:red">Failed to load tracker.</td></tr>';
+            container.innerHTML = '<tr><td colspan="6" style="color:red">Failed to load tracker. Script might be offline.</td></tr>';
         }
     }
 </script>
