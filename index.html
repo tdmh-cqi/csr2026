@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TDMH CSR Requisition Form</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f4f8;
+            background: url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053') no-repeat center center fixed; 
+            background-size: cover;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px); 
+            border: 2px solid #002147;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-btn {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: bold;
+            color: #666;
+            font-size: 16px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            color: #002147;
+            background: #f0f4f8;
+            border-bottom: 3px solid #002147;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            max-width: 250px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .logo:hover { transform: scale(1.05); }
+
+        .cqi-title {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 26px;
+            color: #0066cc;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #002147;
+            margin: 0;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #555;
+            margin-top: 5px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .req-no-box {
+            border: 2px solid #002147;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #dc3545;
+            font-weight: bold;
+            background-color: #f0f4f8;
+        }
+        .urgency-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .radio-option { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 14px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #002147;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="email"], input[type="date"], input[type="time"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .item-table, .tracker-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .item-table th, .item-table td, .tracker-table th, .tracker-table td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .item-table th, .tracker-table th { background-color: #002147; color: white; font-weight: 500; }
+        
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-urgent { background: #fee2e2; color: #dc2626; }
+        .status-regular { background: #dcfce7; color: #16a34a; }
+
+        .signature-section { margin-bottom: 25px; text-align: center; }
+        .signature-pad-body {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            background-color: #fff;
+            margin-bottom: 10px;
+            height: 150px; 
+            position: relative;
+        }
+        canvas { width: 100%; height: 100%; display: block; border-radius: 10px; touch-action: none; }
+
+        .clear-btn {
+            background: white; border: 1px solid #dc3545; color: #dc3545;
+            padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        .btn {
+            flex: 1; padding: 15px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: 700; cursor: pointer; color: white;
+        }
+        .btn-primary { background-color: #002147; }
+        .btn-success { background-color: #28a745; }
+        .btn-refresh { background-color: #0066cc; margin-bottom: 15px; padding: 10px 20px; width: auto; flex: none; }
+
+        @media (max-width: 768px) {
+            .form-header, .form-row, .btn-group { flex-direction: column; gap: 10px; }
+        }
+
+        @media print {
+            .tabs, .btn-group, .clear-btn, .btn-refresh { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('newRequest')">New Request</button>
+            <button class="tab-btn" onclick="openTab('tracker')">Request Tracker</button>
+        </div>
+
+        <div id="newRequest" class="tab-content active">
+            <div class="header">
+                <a href="javascript:location.reload()">
+                    <img src="https://via.placeholder.com/300x80?text=TDMH+LOGO" alt="TDMH Logo" class="logo">
+                </a>
+                <div class="cqi-title">CQI: Continuous Quality Improvement</div>
+                <h1>CENTRAL SUPPLY ROOM<br>2026</h1>
+                <p class="subtitle">REQUISITION SLIP</p>
+            </div>
+
+            <div class="form-header">
+                <div class="urgency-group">
+                    <span class="urgency-label">Priority:</span>
+                    <label class="radio-option">
+                        <input type="radio" name="priority" value="Regular" checked> Regular
+                    </label>
+                    <label class="radio-option" style="color: #dc3545; font-weight: bold;">
+                        <input type="radio" name="priority" value="Urgent"> Urgent 🔥
+                    </label>
+                </div>
+                <div class="req-no-box">
+                    <strong>No: <span id="formNumber">...</span></strong>
+                </div>
+            </div>
+
+            <form id="csrForm">
+                <div class="form-group">
+                    <label for="department">DEPARTMENT</label>
+                    <input type="text" id="department" name="department" required placeholder="Enter Department">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">EMAIL</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter Email address">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">DATE</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">TIME</label>
+                        <input type="time" id="time" name="time" required>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="item-table" id="itemTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 50%;">Item Description</th>
+                                <th style="width: 15%;">Qty/Unit</th>
+                                <th style="width: 30%;">Ref Photo</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestedBy">REQUESTED BY</label>
+                    <input type="text" id="requestedBy" name="requestedBy" required placeholder="Full Name">
+                </div>
+
+                <div class="signature-section">
+                    <label>HOD SIGNATURE</label>
+                    <div class="signature-pad-body">
+                        <canvas id="hodSignature"></canvas>
+                    </div>
+                    <button type="button" class="clear-btn" onclick="clearSignature('hodSignature')">CLEAR</button>
+                </div>
+
+                <div class="signature-section">
+                    <label>ADMIN SIGNATURE</label>
+                    <div class="signature-pad-body">
+                        <canvas id="adminSignature"></canvas>
+                    </div>
+                    <button type="button" class="clear-btn" onclick="clearSignature('adminSignature')">CLEAR</button>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" id="submitBtn" class="btn btn-primary">SUBMIT REQUEST</button>
+                    <button type="button" id="printBtn" class="btn btn-success">SUBMIT & PRINT COPY</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="tracker" class="tab-content">
+            <div class="header">
+                <h1>REQUEST TRACKER</h1>
+                <p class="subtitle">Real-time status of CSR Requisitions</p>
+            </div>
+            
+            <button class="btn btn-refresh" onclick="loadTrackerData()">🔄 REFRESH DATA</button>
+            
+            <div class="table-responsive">
+                <table class="tracker-table" id="trackerTable">
+                    <thead>
+                        <tr>
+                            <th>Req #</th>
+                            <th>Date</th>
+                            <th>Department</th>
+                            <th>Items</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trackerBody">
+                        <tr><td colspan="6">Click refresh to load data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZwibE-gsshjVXOIIl6KrAsqx-3J6lNwRhbK9GK3JEm-2Sf1jbIT0rzw7ZwIoZeE4yWQ/exec"; 
+        
+        var signaturePadHod, signaturePadAdmin;
+
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            if(tabId === 'tracker') loadTrackerData();
+            if(tabId === 'newRequest') initSignatures(); 
+        }
+
+        function initSignatures() {
+            var canvasHod = document.getElementById('hodSignature');
+            var canvasAdmin = document.getElementById('adminSignature');
+
+            function resizeCanvas(canvas) {
+                if(!canvas) return;
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+
+            resizeCanvas(canvasHod);
+            resizeCanvas(canvasAdmin);
+
+            if(!signaturePadHod) signaturePadHod = new SignaturePad(canvasHod);
+            if(!signaturePadAdmin) signaturePadAdmin = new SignaturePad(canvasAdmin);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const tbody = document.querySelector('#itemTable tbody');
+            for (let i = 1; i <= 10; i++) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i}</td>
+                    <td><input type="text" name="itemDesc[]" placeholder="Item ${i}"></td>
+                    <td><input type="number" name="itemQty[]" placeholder="0"></td>
+                    <td><input type="file" class="item-photo" accept="image/*"></td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            initSignatures();
+            
+            fetch(SCRIPT_URL + "?action=getFormNumber")
+            .then(res => res.text())
+            .then(num => { document.getElementById('formNumber').innerText = num; })
+            .catch(() => document.getElementById('formNumber').innerText = "Error");
+            
+            const now = new Date();
+            document.getElementById('date').valueAsDate = now;
+            document.getElementById('time').value = now.toTimeString().substring(0,5);
+        });
+
+        function clearSignature(id) {
+            if(id === 'hodSignature') signaturePadHod.clear();
+            if(id === 'adminSignature') signaturePadAdmin.clear();
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 1920; 
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    };
+                };
+            });
+        }
+
+        function loadTrackerData() {
+            const body = document.getElementById('trackerBody');
+            body.innerHTML = '<tr><td colspan="6">Fetching latest records...</td></tr>';
+
+            fetch(SCRIPT_URL + "?action=getRequests")
+            .then(res => res.json())
+            .then(data => {
+                if(data.length === 0) {
+                    body.innerHTML = '<tr><td colspan="6">No requests found.</td></tr>';
+                    return;
+                }
+                body.innerHTML = "";
+                data.sort((a,b) => b.id - a.id).forEach(row => {
+                    const tr = document.createElement('tr');
+                    const priorityClass = row.priority === 'Urgent' ? 'status-urgent' : 'status-regular';
+                    tr.innerHTML = `
+                        <td><strong>#${row.id}</strong></td>
+                        <td>${row.date}</td>
+                        <td>${row.dept}</td>
+                        <td style="text-align:left; font-size:11px;">${row.items.replace(/\|/g, '<br>')}</td>
+                        <td><span class="status-pill ${priorityClass}">${row.priority}</span></td>
+                        <td><span class="status-pill" style="background:#eee">Submitted</span></td>
+                    `;
+                    body.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                body.innerHTML = '<tr><td colspan="6" style="color:red">Failed to load tracker data.</td></tr>';
+            });
+        }
+
+        document.getElementById('csrForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleSubmit(false);
+        });
+
+        document.getElementById('printBtn').addEventListener('click', function() {
+            if(document.getElementById('csrForm').checkValidity()) {
+                handleSubmit(true);
+            } else {
+                document.getElementById('csrForm').reportValidity();
+            }
+        });
+
+        function handleSubmit(shouldPrint) {
+            Swal.fire({ title: 'Submitting...', text: 'Sending data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+            const form = document.getElementById('csrForm');
+            const formData = new FormData(form);
+            let itemDescs = [], itemQtys = [], fileReadPromises = [];
+
+            const descInputs = document.querySelectorAll('input[name="itemDesc[]"]');
+            const qtyInputs = document.querySelectorAll('input[name="itemQty[]"]');
+            const photoInputs = document.querySelectorAll('.item-photo');
+
+            descInputs.forEach((input, index) => {
+                let itemVal = input.value.trim();
+                let qtyVal = qtyInputs[index].value;
+                let photoFile = photoInputs[index].files[0];
+
+                if(itemVal) {
+                    itemDescs.push(itemVal);
+                    itemQtys.push(qtyVal || "0");
+                    if (photoFile) {
+                        fileReadPromises.push(compressImage(photoFile).then(base64 => ({ itemName: itemVal, base64: base64 })));
+                    }
+                }
+            });
+
+            Promise.all(fileReadPromises).then(processedImages => {
+                const priorityVal = document.querySelector('input[name="priority"]:checked').value;
+                let data = {
+                    formNum: document.getElementById('formNumber').innerText,
+                    priority: priorityVal,
+                    dept: formData.get('department'),
+                    email: formData.get('email'),
+                    date: formData.get('date'),
+                    time: formData.get('time'),
+                    reqBy: formData.get('requestedBy'),
+                    recBy: "", // Explicitly set to empty string for the UNUSED column H
+                    itemDescs: itemDescs.join(" | "), 
+                    itemQtys: itemQtys.join(" | "),
+                    sigHod: signaturePadHod.isEmpty() ? "" : signaturePadHod.toDataURL(),
+                    sigAdmin: signaturePadAdmin.isEmpty() ? "" : signaturePadAdmin.toDataURL(),
+                    rowImages: processedImages 
+                };
+                sendData(data, shouldPrint);
+            });
+        }
+
+        function sendData(data, shouldPrint) {
+            fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(data) })
+            .then(response => response.text())
+            .then(() => {
+                Swal.fire({ icon: 'success', title: 'Success!', text: 'Request Submitted.' });
+                if (shouldPrint) window.print();
+                setTimeout(() => location.reload(), 2000);
+            })
+            .catch(() => {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong.' });
+            });
+        }
+    </script>
+</body>
+</html>
