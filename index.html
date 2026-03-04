@@ -491,7 +491,6 @@
         const aCanvas = document.getElementById('adminPad');
         
         const resizeAndFill = (canvas) => {
-            // Optimized for high DPI screens (like iPhones/iPads)
             const ratio =  Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.parentElement.offsetWidth * ratio;
             canvas.height = canvas.parentElement.offsetHeight * ratio;
@@ -529,7 +528,6 @@
         }
     }
 
-    // Highly optimized mobile image compressor
     const compressImage = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -622,11 +620,11 @@
                 window.print();
             }
 
-            // Beautiful success prompt with "Submit Another" button
+            // Beautiful success prompt with dedicated button
             Swal.fire({
                 icon: 'success',
                 title: 'Request Submitted!',
-                text: 'The CSR Department has received your request and will notify you via email.',
+                html: '<p style="color:#555; font-size:15px;">Your request has been successfully submitted to the CSR Department. They will notify you via email regarding updates.</p>',
                 confirmButtonText: 'Submit Another Request',
                 confirmButtonColor: '#002147',
                 allowOutsideClick: false
@@ -646,7 +644,8 @@
         container.innerHTML = '<tr><td colspan="6" align="center">Refreshing...</td></tr>';
         try {
             const res = await fetch(`${SCRIPT_URL}?action=getRequests`);
-            trackerCache = await res.json();
+            const responseData = await res.json();
+            trackerCache = responseData.data;
             renderTrackerTable(trackerCache);
         } catch (e) {
             container.innerHTML = '<tr><td colspan="6" style="color:red">Failed to load tracker.</td></tr>';
