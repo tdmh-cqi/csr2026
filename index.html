@@ -72,8 +72,13 @@
             margin-bottom: -2px;
         }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content { 
+            display: none; 
+        }
+        
+        .tab-content.active { 
+            display: block; 
+        }
 
         /* Header Area */
         .header { 
@@ -332,7 +337,9 @@
                             <th>Photo (Optional)</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <!-- Rows dynamically injected via JS -->
+                    </tbody>
                 </table>
             </div>
 
@@ -450,6 +457,7 @@
 
     function setupItemsTable() {
         const tbody = document.querySelector('#itemsTable tbody');
+        tbody.innerHTML = '';
         for (let i = 1; i <= 10; i++) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -465,12 +473,15 @@
     function initPads() {
         const hCanvas = document.getElementById('hodPad');
         const aCanvas = document.getElementById('adminPad');
+        
         const resize = (canvas) => {
             canvas.width = canvas.parentElement.offsetWidth;
             canvas.height = canvas.parentElement.offsetHeight;
         };
+        
         resize(hCanvas); 
         resize(aCanvas);
+        
         sigPads.hod = new SignaturePad(hCanvas);
         sigPads.admin = new SignaturePad(aCanvas);
     }
@@ -494,7 +505,7 @@
         }
     }
 
-    // This shrinks the image so it fits inside Google Sheets' 50,000 character cell limit
+    // Shrinks the image so it fits comfortably inside Google Sheets limits and doesn't get stuck processing
     const compressImage = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -541,13 +552,6 @@
         });
     };
 
-    // Convert Signature to Tiny SVG instead of massive PNG to save space
-    function getSignatureSvg(pad) {
-        if (pad.isEmpty()) return "";
-        // Returns an incredibly tiny text string that perfectly scales
-        return "data:image/svg+xml;base64," + btoa(pad.toSVG());
-    }
-
     document.getElementById('mainForm').onsubmit = async (e) => {
         e.preventDefault();
         await processSubmission(false);
@@ -562,7 +566,11 @@
     }
 
     async function processSubmission(isPrint) {
-        Swal.fire({ title: 'Processing Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ 
+            title: 'Processing Data...', 
+            allowOutsideClick: false, 
+            didOpen: () => Swal.showLoading() 
+        });
 
         const items = [];
         const qtys = [];
@@ -609,9 +617,9 @@
             itemQtys: qtys.join(" | "),
             photo: photos.find(p => p !== "") || "", 
             additionalNotes: document.getElementById('inputRemarks').value,
-            // Generate the tiny SVGs here instead of PNGs
-            sigHod: getSignatureSvg(sigPads.hod),
-            sigAdmin: getSignatureSvg(sigPads.admin)
+            // Submit signatures compressed as JPEGs to prevent Google Apps Script timeout failure
+            sigHod: sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL('image/jpeg', 0.5),
+            sigAdmin: sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL('image/jpeg', 0.5)
         };
 
         try {
@@ -624,7 +632,7 @@
             if(isPrint) window.print();
             setTimeout(() => location.reload(), 2500);
         } catch (e) {
-            Swal.fire('Error', 'Could not save data.', 'error');
+            Swal.fire('Error', 'Could not save data. Check connection.', 'error');
         }
     }
 
