@@ -204,17 +204,19 @@
         
         .canvas-container { 
             border: 2px dashed #ccc; 
-            background: #fafafa; 
+            background: #ffffff; 
             height: 150px; 
             border-radius: 8px; 
             margin-bottom: 10px;
             position: relative;
+            overflow: hidden;
         }
         
         canvas { 
             width: 100%; 
             height: 100%; 
             cursor: crosshair; 
+            background-color: #ffffff;
         }
 
         /* Buttons */
@@ -474,16 +476,22 @@
         const hCanvas = document.getElementById('hodPad');
         const aCanvas = document.getElementById('adminPad');
         
-        const resize = (canvas) => {
+        const resizeAndFill = (canvas) => {
             canvas.width = canvas.parentElement.offsetWidth;
             canvas.height = canvas.parentElement.offsetHeight;
+            const ctx = canvas.getContext('2d');
+            // Hardcode white background during initialization
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         };
         
-        resize(hCanvas); 
-        resize(aCanvas);
+        resizeAndFill(hCanvas); 
+        resizeAndFill(aCanvas);
         
-        sigPads.hod = new SignaturePad(hCanvas);
-        sigPads.admin = new SignaturePad(aCanvas);
+        // CRITICAL FIX: Explicitly tell SignaturePad that the background is white. 
+        // This guarantees that it will never produce a black box!
+        sigPads.hod = new SignaturePad(hCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
+        sigPads.admin = new SignaturePad(aCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
     }
 
     function setDefaults() {
@@ -505,7 +513,7 @@
         }
     }
 
-    // Shrinks the image so it fits comfortably inside Google Sheets limits and prevents timeout errors
+    // Compresses the image so it fits comfortably inside Google Sheets limits and prevents timeout errors
     const compressImage = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -600,6 +608,10 @@
             return;
         }
 
+        // Check if signature pads are practically empty, if not export them as standard PNG
+        const hodData = sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL();
+        const adminData = sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL();
+
         const payload = {
             formNum: document.getElementById('reqNoDisplay').innerText,
             priority: document.getElementById('priority').value,
@@ -614,9 +626,8 @@
             photo: photos.find(p => p !== "") || "", 
             additionalNotes: document.getElementById('inputRemarks').value,
             
-            // MUST BE toDataURL() without arguments so it exports as standard transparent PNG.
-            sigHod: sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL(),
-            sigAdmin: sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL()
+            sigHod: hodData,
+            sigAdmin: adminData
         };
 
         try {
