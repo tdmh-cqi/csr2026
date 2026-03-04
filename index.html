@@ -323,7 +323,9 @@
 </div>
 
 <script>
+    // ** IMPORTANT: REPLACE THIS URL WITH YOUR NEW DEPLOYMENT URL **
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhQwVJTvLo_W4IcxPTdcCDojC92XjS4Y5wb1r_ldwO1jXu7LJ99QBMJ_Ncl4FBek239Q/exec";
+    
     let sigPads = { hod: null, admin: null };
     let trackerCache = [];
 
@@ -404,13 +406,47 @@
         }
     }
 
-    // Helper to convert file to Base64
-    const toBase64 = file => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
+    // --- CRITICAL ADDITION: COMPRESS IMAGE BEFORE SENDING ---
+    // This shrinks the image so it fits inside Google Sheets' 50,000 character cell limit
+    const compressImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Fill with white background to prevent black transparent areas
+                    ctx.fillStyle = "#ffffff";
+                    
+                    // Resize to a max 400px width/height to ensure small Base64 string
+                    const MAX_WIDTH = 400;
+                    const MAX_HEIGHT = 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height); 
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Output as JPEG with 0.6 quality compression
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    resolve(compressedBase64);
+                };
+            };
+            reader.onerror = error => reject(error);
+        });
+    };
 
     document.getElementById('mainForm').onsubmit = async (e) => {
         e.preventDefault();
@@ -426,7 +462,7 @@
     }
 
     async function processSubmission(isPrint) {
-        Swal.fire({ title: 'Submitting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Compressing Data & Submitting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         const items = [];
         const qtys = [];
@@ -443,7 +479,8 @@
                 qtys.push(qty || "0"); 
                 if (imgFile) {
                     try {
-                        const b64 = await toBase64(imgFile);
+                        // Use the new compression function here!
+                        const b64 = await compressImage(imgFile);
                         photos.push(b64);
                     } catch(e) { photos.push(""); }
                 } else {
@@ -468,7 +505,6 @@
             recBy: "",
             itemDescs: items.join(" | "),
             itemQtys: qtys.join(" | "),
-            // Combining item photos into a single string for simplicity or taking the first one
             photo: photos.find(p => p !== "") || "", 
             additionalNotes: document.getElementById('inputRemarks').value,
             sigHod: sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL(),
