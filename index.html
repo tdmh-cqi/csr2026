@@ -96,29 +96,94 @@
             margin-bottom: -2px;
         }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content { 
+            display: none; 
+        }
+        
+        .tab-content.active { 
+            display: block; 
+        }
 
         /* Header Area */
-        .header { text-align: center; margin-bottom: 40px; }
-        .cqi-title { font-size: 24px; color: var(--accent-blue); font-weight: 700; font-family: serif; }
-        h1 { font-size: 28px; color: var(--primary-navy); margin: 10px 0; letter-spacing: 1px; }
-        .subtitle { font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+        .header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+        }
+        
+        .cqi-title { 
+            font-size: 24px; 
+            color: var(--accent-blue); 
+            font-weight: 700; 
+            font-family: serif; 
+        }
+        
+        h1 { 
+            font-size: 28px; 
+            color: var(--primary-navy); 
+            margin: 10px 0; 
+            letter-spacing: 1px; 
+        }
+        
+        .subtitle { 
+            font-weight: 500; 
+            color: #666; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+        }
 
         /* Form Components */
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: var(--primary-navy); }
+        .form-row { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            margin-bottom: 20px; 
+        }
+        
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            font-size: 13px; 
+            color: var(--primary-navy); 
+        }
         
         input, textarea, select {
-            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
 
         /* Table Styling */
-        .table-responsive { overflow-x: auto; margin: 25px 0; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background: var(--primary-navy); color: white; padding: 12px; font-size: 13px; }
-        td { border: 1px solid #eee; padding: 10px; font-size: 13px; }
+        .table-responsive { 
+            overflow-x: auto; 
+            margin: 25px 0; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white; 
+        }
+        
+        th { 
+            background: var(--primary-navy); 
+            color: white; 
+            padding: 12px; 
+            font-size: 13px; 
+        }
+        
+        td { 
+            border: 1px solid #eee; 
+            padding: 10px; 
+            font-size: 13px; 
+        }
 
         /* Status Colors - Updated for new Logic */
         .status-pill {
@@ -365,7 +430,11 @@
     // ** IMPORTANT: REPLACE THIS URL WITH YOUR NEW DEPLOYMENT URL **
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhQwVJTvLo_W4IcxPTdcCDojC92XjS4Y5wb1r_ldwO1jXu7LJ99QBMJ_Ncl4FBek239Q/exec";
     
-    let sigPads = { hod: null, admin: null };
+    let sigPads = { 
+        hod: null, 
+        admin: null 
+    };
+    
     let trackerCache = [];
 
     window.onload = () => {
@@ -387,8 +456,12 @@
     }
 
     function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => {
+            c.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active');
+        });
         
         if (tab === 'new') {
             document.getElementById('tab-new').classList.add('active');
@@ -430,8 +503,13 @@
         resizeAndFill(hCanvas); 
         resizeAndFill(aCanvas);
         
-        sigPads.hod = new SignaturePad(hCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
-        sigPads.admin = new SignaturePad(aCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
+        sigPads.hod = new SignaturePad(hCanvas, { 
+            backgroundColor: 'rgb(255, 255, 255)' 
+        });
+        
+        sigPads.admin = new SignaturePad(aCanvas, { 
+            backgroundColor: 'rgb(255, 255, 255)' 
+        });
     }
 
     function setDefaults() {
@@ -443,7 +521,9 @@
     async function fetchReqNumber() {
         try {
             const res = await fetch(`${SCRIPT_URL}?action=getFormNumber`);
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                throw new Error();
+            }
             const num = await res.text();
             document.getElementById('reqNoDisplay').innerText = num;
             updateStatus(true);
@@ -463,20 +543,33 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
+                    
                     ctx.fillStyle = "#ffffff";
                     
-                    const MAX_WIDTH = 400, MAX_HEIGHT = 400;
-                    let width = img.width, height = img.height;
+                    const MAX_WIDTH = 400;
+                    const MAX_HEIGHT = 400;
+                    let width = img.width;
+                    let height = img.height;
+
                     if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        if (width > MAX_WIDTH) { 
+                            height *= MAX_WIDTH / width; 
+                            width = MAX_WIDTH; 
+                        }
                     } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        if (height > MAX_HEIGHT) { 
+                            width *= MAX_HEIGHT / height; 
+                            height = MAX_HEIGHT; 
+                        }
                     }
 
-                    canvas.width = width; canvas.height = height;
+                    canvas.width = width;
+                    canvas.height = height;
                     ctx.fillRect(0, 0, canvas.width, canvas.height); 
                     ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    resolve(compressedBase64);
                 };
             };
             reader.onerror = error => reject(error);
@@ -489,14 +582,24 @@
     };
 
     async function handlePrint() {
-        if(document.getElementById('mainForm').checkValidity()) await processSubmission(true);
-        else document.getElementById('mainForm').reportValidity();
+        if(document.getElementById('mainForm').checkValidity()) {
+            await processSubmission(true);
+        } else {
+            document.getElementById('mainForm').reportValidity();
+        }
     }
 
     async function processSubmission(isPrint) {
-        Swal.fire({ title: 'Sending to Database...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ 
+            title: 'Sending to Database...', 
+            allowOutsideClick: false, 
+            didOpen: () => Swal.showLoading() 
+        });
 
-        const items = [], qtys = [], photos = [];
+        const items = [];
+        const qtys = [];
+        const photos = [];
+
         const rows = document.querySelectorAll('#itemsTable tbody tr');
         
         for (let row of rows) {
@@ -505,15 +608,29 @@
             const imgFile = row.querySelector('.item-img').files[0];
             
             if(name) { 
-                items.push(name); qtys.push(qty || "0"); 
+                items.push(name); 
+                qtys.push(qty || "0"); 
+                
                 if (imgFile) {
-                    try { photos.push(await compressImage(imgFile)); } 
-                    catch(e) { photos.push(""); }
-                } else { photos.push(""); }
+                    try {
+                        const b64 = await compressImage(imgFile);
+                        photos.push(b64);
+                    } catch(e) { 
+                        photos.push(""); 
+                    }
+                } else {
+                    photos.push("");
+                }
             }
         }
 
-        if (items.length === 0) return Swal.fire('Empty Request', 'Add at least one item.', 'warning');
+        if (items.length === 0) {
+            Swal.fire('Empty Request', 'Add at least one item.', 'warning');
+            return;
+        }
+
+        const hodData = sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL();
+        const adminData = sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL();
 
         const payload = {
             formNum: document.getElementById('reqNoDisplay').innerText,
@@ -528,15 +645,27 @@
             itemQtys: qtys.join(" | "),
             photo: photos.find(p => p !== "") || "", 
             additionalNotes: document.getElementById('inputRemarks').value,
-            sigHod: sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL(),
-            sigAdmin: sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL()
+            sigHod: hodData,
+            sigAdmin: adminData
         };
 
         try {
-            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify(payload) 
+            });
+            
             Swal.fire('Success', 'Request sent to CSR successfully!', 'success');
-            if(isPrint) window.print();
-            setTimeout(() => location.reload(), 2500);
+            
+            if(isPrint) {
+                window.print();
+            }
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2500);
+            
         } catch (e) {
             Swal.fire('Error', 'Could not save data. Check connection.', 'error');
         }
@@ -545,9 +674,11 @@
     async function fetchTracker() {
         const container = document.getElementById('trackerData');
         container.innerHTML = '<tr><td colspan="6" align="center">Refreshing...</td></tr>';
+        
         try {
             const res = await fetch(`${SCRIPT_URL}?action=getRequests`);
-            trackerCache = await res.json();
+            const data = await res.json();
+            trackerCache = data;
             renderTrackerTable(trackerCache);
         } catch (e) {
             container.innerHTML = '<tr><td colspan="6" style="color:red">Failed to load tracker.</td></tr>';
@@ -556,15 +687,23 @@
 
     function renderTrackerTable(data) {
         const container = document.getElementById('trackerData');
-        if (data.length === 0) return container.innerHTML = '<tr><td colspan="6" align="center">No records found.</td></tr>';
+        
+        if (data.length === 0) {
+            container.innerHTML = '<tr><td colspan="6" align="center">No records found.</td></tr>';
+            return;
+        }
 
         container.innerHTML = data.sort((a,b) => b.id - a.id).map(row => {
             const status = row.status || 'Received';
             const sClass = status.toLowerCase().replace(/\s/g, '');
+            
             return `
                 <tr>
-                    <td>#${row.id}</td><td>${row.date}</td><td><b>${row.dept}</b></td>
-                    <td style="font-size:11px">${row.items}</td><td>${row.priority}</td>
+                    <td>#${row.id}</td>
+                    <td>${row.date}</td>
+                    <td><b>${row.dept}</b></td>
+                    <td style="font-size:11px">${row.items}</td>
+                    <td>${row.priority}</td>
                     <td><span class="status-pill status-${sClass}">${status}</span></td>
                 </tr>
             `;
@@ -576,12 +715,20 @@
         const dateFilter = document.getElementById('trackDateFilter').value;
         const statusFilter = document.getElementById('trackStatusFilter').value;
         
-        renderTrackerTable(trackerCache.filter(item => {
+        const filtered = trackerCache.filter(item => {
             const matchDept = !deptFilter || item.dept.toLowerCase().includes(deptFilter);
             const matchDate = !dateFilter || item.date === dateFilter;
-            const matchStatus = !statusFilter || item.status === statusFilter;
+            
+            let itemStatus = item.status || 'Received';
+            if (itemStatus === 'Pending') itemStatus = 'Received';
+            if (itemStatus === 'For Releasing' || itemStatus === 'Released') itemStatus = 'For Release';
+            
+            const matchStatus = !statusFilter || itemStatus === statusFilter;
+            
             return matchDept && matchDate && matchStatus;
-        }));
+        });
+        
+        renderTrackerTable(filtered);
     }
 
     function clearTrackFilters() {
