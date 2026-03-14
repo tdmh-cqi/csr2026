@@ -18,13 +18,11 @@
             --urgent-red: #dc3545;
             --bg-light: #f0f4f8;
             
-            /* Enhanced Status Colors */
+            /* Status Colors */
             --color-pending: #8e8e8e;
             --color-received: #ef6c00;
             --color-partial: #8b5cf6;
             --color-forrelease: #0288d1;
-            --color-completed: #2e7d32;
-            --color-disapproved: #c62828;
         }
 
         body {
@@ -79,8 +77,6 @@
         .st-received { background: #fff3e0; color: var(--color-received); border: 1px solid var(--color-received); }
         .st-partialrelease { background: #e0e7ff; color: var(--color-partial); border: 1px solid #c7d2fe; }
         .st-forrelease { background: #e0f7fa; color: var(--color-forrelease); border: 1px solid #b3e5fc; }
-        .st-completed { background: #e8f5e9; color: var(--color-completed); border: 1px solid #c8e6c9; }
-        .st-disapproved { background: #ffebee; color: var(--color-disapproved); border: 1px solid #ffcdd2; }
 
         .tracker-filters { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; border: 1px solid #eee; }
 
@@ -268,7 +264,7 @@
     <div id="tab-track" class="tab-content">
         <div class="header">
             <h1>Live Request Tracker</h1>
-            <p>Recent submissions from all departments</p>
+            <p>Active and processing submissions from all departments</p>
         </div>
 
         <div class="tracker-filters">
@@ -283,13 +279,11 @@
             <div class="form-group">
                 <label>Status</label>
                 <select id="trackStatusFilter" onchange="filterTrackerData()">
-                    <option value="">All Statuses</option>
+                    <option value="">All Active Statuses</option>
                     <option value="Pending">Pending</option>
                     <option value="Received">Received</option>
                     <option value="Partial Release">Partial Release</option>
                     <option value="For Release">For Release</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Disapproved">Disapproved</option>
                 </select>
             </div>
             <button class="btn-clear" style="height: 45px;" onclick="clearTrackFilters()">Reset Filters</button>
@@ -489,7 +483,7 @@
             recBy: "",
             itemDescs: items.join(" | "),
             itemQtys: qtys.join(" | "),
-            photo: photos.join(" | "), // Store all photos 
+            photo: photos.join(" | "), 
             additionalNotes: document.getElementById('inputRemarks').value,
             sigHod: sigPads.hod.isEmpty() ? "" : sigPads.hod.toDataURL(),
             sigAdmin: sigPads.admin.isEmpty() ? "" : sigPads.admin.toDataURL()
@@ -535,9 +529,13 @@
 
     function renderTrackerTable(data) {
         const container = document.getElementById('trackerData');
-        if (data.length === 0) return container.innerHTML = '<tr><td colspan="5" align="center">No records found.</td></tr>';
+        
+        // Exclude Completed and Disapproved globally from tracking array before generating HTML
+        const activeData = data.filter(item => item.status !== 'Completed' && item.status !== 'Disapproved');
+        
+        if (activeData.length === 0) return container.innerHTML = '<tr><td colspan="5" align="center">No active records found.</td></tr>';
 
-        container.innerHTML = data.sort((a,b) => b.id - a.id).map(row => {
+        container.innerHTML = activeData.sort((a,b) => b.id - a.id).map(row => {
             let status = row.status || 'Pending';
             let displayStatus = status;
             let sClass = "st-" + status.toLowerCase().replace(/\s/g, '');
@@ -547,11 +545,9 @@
                 sClass = "st-received";
             }
 
-            // Bulletproof array generation to fix rendering
             const itemsArr = String(row.items || '').split('|').map(i => i.trim());
             const qtysArr = String(row.qtys || '').split('|').map(i => i.trim());
             
-            // Beautiful Bulleted UI identical to Admin Site
             let itemsHtml = '<ul style="margin:0; padding-left:15px; padding-top: 5px; padding-bottom: 5px; font-size:12px; line-height:1.4;">';
             for(let i=0; i<itemsArr.length; i++) {
                 if(itemsArr[i]) {
