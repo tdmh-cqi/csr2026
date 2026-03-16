@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TDMH CSR Requisition Form</title>
     
-    <!-- Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -62,9 +61,9 @@
         label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: var(--primary-navy); text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
 
-        .table-responsive { overflow-x: auto; margin: 25px 0; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #eee; }
+        .table-responsive { overflow-x: auto; margin: 25px 0; max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
-        th { background: var(--primary-navy); color: white; padding: 12px; font-size: 13px; white-space: nowrap; }
+        th { background: var(--primary-navy); color: white; padding: 12px; font-size: 13px; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
         td { border: 1px solid #eee; padding: 10px; font-size: 13px; vertical-align: top; }
 
         .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; text-align: center; min-width: 90px; }
@@ -84,7 +83,6 @@
         .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 40px; }
         .btn { flex: 1; min-width: 200px; padding: 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.3s; font-size: 15px; }
         .btn-main { background: var(--primary-navy); color: white; }
-        .btn-alt { background: #28a745; color: white; }
         .btn-clear { background: #eee; color: #666; padding: 8px 15px; font-size: 11px; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; }
 
         @media (max-width: 768px) {
@@ -92,7 +90,6 @@
             .cqi-title { font-size: 20px; }
             h1 { font-size: 24px; }
         }
-
         @media print {
             .tabs, .btn-group, .btn-clear, .tracker-filters, .header-logo-link { display: none !important; }
             .container { box-shadow: none; border: none; padding: 0; }
@@ -146,39 +143,7 @@
                 <div class="form-group">
                     <label>DEPARTMENT</label>
                     <select name="department" id="inputDept" required>
-                        <option value="" disabled selected>Select Department...</option>
-                        <option value="Accounting">Accounting</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Admitting">Admitting</option>
-                        <option value="APE/YAKAP">APE/YAKAP</option>
-                        <option value="Billing">Billing</option>
-                        <option value="Cashier">Cashier</option>
-                        <option value="CQI">CQI</option>
-                        <option value="ER">ER</option>
-                        <option value="HMO">HMO</option>
-                        <option value="HOMES">HOMES</option>
-                        <option value="General Services">General Services</option>
-                        <option value="HR">HR</option>
-                        <option value="IT">IT</option>
-                        <option value="Laboratory">Laboratory</option>
-                        <option value="Medical Record">Medical Record</option>
-                        <option value="NICU">NICU</option>
-                        <option value="NSO">NSO</option>
-                        <option value="OH Nurse">OH Nurse</option>
-                        <option value="OPD">OPD</option>
-                        <option value="OR">OR</option>
-                        <option value="Pharmacy">Pharmacy</option>
-                        <option value="PhilHealth">PhilHealth</option>
-                        <option value="Radiology/XRay">Radiology/XRay</option>
-                        <option value="Releasing">Releasing</option>
-                        <option value="Security">Security</option>
-                        <option value="Social Service">Social Service</option>
-                        <option value="Station 3">Station 3</option>
-                        <option value="Station 4B">Station 4B</option>
-                        <option value="Station 5A">Station 5A</option>
-                        <option value="Station 5B">Station 5B</option>
-                        <option value="Training & Development">Training & Development</option>
-                        <option value="Ultrasound">Ultrasound</option>
+                        <option value="" disabled selected>Loading Departments...</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -264,7 +229,9 @@
         <div class="tracker-filters">
             <div class="form-group">
                 <label>Search Department</label>
-                <input type="text" id="trackDeptFilter" placeholder="Type department name..." oninput="filterTrackerData()">
+                <select id="trackDeptFilter" onchange="filterTrackerData()">
+                    <option value="">All Departments</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Filter by Date</label>
@@ -307,18 +274,39 @@
     
     let sigPads = { hod: null, admin: null };
     let trackerCache = [];
-    
-    function setDisplay(id, val) {
-        const el = document.getElementById(id);
-        if (el) el.style.display = val;
-    }
+    let deptsCache = [];
 
     window.onload = () => {
+        fetchDepartments();
         setupItemsTable();
         initPads();
         setDefaults();
         fetchReqNumber();
     };
+
+    async function fetchDepartments() {
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=getDepartments`);
+            if(!res.ok) throw new Error("Net err");
+            const text = await res.text();
+            deptsCache = JSON.parse(text);
+            
+            const reqSel = document.getElementById('inputDept');
+            const trackSel = document.getElementById('trackDeptFilter');
+            
+            if (reqSel && Array.isArray(deptsCache) && deptsCache.length > 0) {
+                reqSel.innerHTML = '<option value="" disabled selected>Select Department...</option>';
+                deptsCache.forEach(d => reqSel.innerHTML += `<option value="${d}">${d}</option>`);
+            }
+            if (trackSel && Array.isArray(deptsCache) && deptsCache.length > 0) {
+                trackSel.innerHTML = '<option value="">All Departments</option>';
+                deptsCache.forEach(d => trackSel.innerHTML += `<option value="${d}">${d}</option>`);
+            }
+        } catch(e) { 
+            const reqSel = document.getElementById('inputDept');
+            if (reqSel) reqSel.innerHTML = '<option value="" disabled selected>Error Loading Departments</option>';
+        }
+    }
 
     function updateStatus(isOnline) {
         const badge = document.querySelector('#connectionStatus span');
@@ -353,7 +341,7 @@
         const tbody = document.querySelector('#itemsTable tbody');
         if(!tbody) return;
         tbody.innerHTML = '';
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 50; i++) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="font-weight: bold; color: #888;">${i}</td>
@@ -451,12 +439,6 @@
         };
     }
 
-    async function handlePrint() {
-        const form = document.getElementById('mainForm');
-        if(form && form.checkValidity()) await processSubmission(true);
-        else if (form) form.reportValidity();
-    }
-
     async function processSubmission(isPrint) {
         Swal.fire({ 
             title: 'Sending to Database...', 
@@ -473,8 +455,9 @@
             const qty = row.querySelector('.item-qty')?.value;
             const imgFile = row.querySelector('.item-img')?.files[0];
             
-            if(name) { 
-                items.push(name); qtys.push(qty || "0"); 
+            if(name && name.trim() !== "") { 
+                items.push(name.replace(/\|/g, '')); 
+                qtys.push(qty || "0"); 
                 if (imgFile) {
                     try { photos.push(await compressImage(imgFile)); } 
                     catch(e) { photos.push(""); }
@@ -504,8 +487,6 @@
         try {
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             
-            if(isPrint) window.print();
-
             Swal.fire({
                 icon: 'success',
                 title: 'Request Submitted!',
